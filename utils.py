@@ -82,7 +82,8 @@ class ACPolicy(nn.Module):
     def dist_sample_no_postprocess(self, mu, std):
         action = torch.zeros((mu.shape[0], 1)).to(device)
         # TODO START
-        # Hint: reparameterization trick
+        # Hint: perform the reparameterization trick - action = mean + epsilon*std, where epsilon \sim N(0, I)
+        # This will allow policy updates through gradient based updates via pathwise derivatives
         # TODO END
         return action
 

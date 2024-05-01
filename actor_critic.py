@@ -75,8 +75,20 @@ def compute_losses(policy, qf, target_qf, obs_t, actions_t, rewards_t, next_obs_
     rewards_t = torch.Tensor(rewards_t).to(device)
     next_obs_t = torch.Tensor(next_obs_t).to(device)
     not_dones_t = torch.Tensor(not_dones_t).to(device)
+
     # TODO START
     # Hint: compute policy_loss and qf_loss.
+
+    # Policy loss: 
+    # Hint: Step 1: Get (differentiable) action samples a_sampled_t from the policy using policy.forward
+    # Hint: Step 2: Compute the Q values as qf(obs_t, a_sampled_t)
+    # Hint: Step 3: Policy loss is the mean over negative Q values
+
+    # QF loss: 
+    # Hint: Step 1: Compute q predictions using obs_t, actions_t
+    # Hint: Step 2: Compute q targets using reward + target_qf for next_obs_t and new actions sampled from the policy
+    # Hint: Step 3: Compute Bellman error as mean squared error between q_predictions and q_targets
+
     # TODO END
 
     return policy_loss, qf_loss

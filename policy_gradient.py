@@ -31,10 +31,11 @@ def train_model(policy, baseline, trajs, policy_optim, baseline_optim, device, g
         returns_singletraj = np.zeros_like(rewards_singletraj)
         # TODO START
 
-        # TODO: Compute the returns on the current batch of trajectories
+        # TODO: Compute the return to go on the current batch of trajectories
         # Hint: Go through all the trajectories in trajs and compute their return to go: discounted sum of rewards from that timestep to the end.
         # Hint: This is easy to do if you go backwards in time and sum up the reward as a running sum.
-        # Hint: Remember that return to go is return = r[t] + gamma*r[t+1] + gamma^2*r[t+2] + ...
+        # Hint: Remember that return to go is return = r[t] + gamma*r[t+1] + gamma^2*r[t+2] + .... Don't forget the discount!
+        # Hint: Use np.cumsum going backwards through the trajectory to compute the returns to go.
 
         # TODO END
         states_all.append(states_singletraj)
@@ -46,7 +47,7 @@ def train_model(policy, baseline, trajs, policy_optim, baseline_optim, device, g
 
     # TODO: Normalize the returns by subtracting mean and dividing by std
     # TODO START
-    # Hint: Just do return - return.mean()/ (return.std() + EPS), where EPS is a small constant for numerics
+    # Hint: Just subtract mean and divide by (return.std() + EPS), where EPS is a small constant for numerics
     # TODO END
 
 
