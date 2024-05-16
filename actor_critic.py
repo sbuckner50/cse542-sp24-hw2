@@ -18,6 +18,7 @@ from typing import Tuple, Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 from utils import collect_trajs
+from pdb import set_trace as debug
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions."""
@@ -76,21 +77,18 @@ def compute_losses(policy, qf, target_qf, obs_t, actions_t, rewards_t, next_obs_
     next_obs_t = torch.Tensor(next_obs_t).to(device)
     not_dones_t = torch.Tensor(not_dones_t).to(device)
 
-    # TODO START
-    # Hint: compute policy_loss and qf_loss.
-
     # Policy loss: 
-    # Hint: Step 1: Get (differentiable) action samples a_sampled_t from the policy using policy.forward
-    # Hint: Step 2: Compute the Q values as qf(obs_t, a_sampled_t)
-    # Hint: Step 3: Policy loss is the mean over negative Q values
-
+    a_sampled_t,_,_ = policy.forward(obs_t)
+    q_samples = qf(torch.cat((obs_t, a_sampled_t),1))
+    policy_loss = -q_samples.mean()
+    
     # QF loss: 
-    # Hint: Step 1: Compute q predictions using obs_t, actions_t
-    # Hint: Step 2: Compute q targets using reward + target_qf for next_obs_t and new actions sampled from the policy
-    # Hint: Step 3: Compute Bellman error as mean squared error between q_predictions and q_targets
-
-    # TODO END
-
+    criterion = torch.nn.MSELoss()
+    q_predictions = qf(torch.cat((obs_t, actions_t),1))
+    with torch.no_grad():
+        next_actions_t,_,_ = policy.forward(next_obs_t) 
+        q_targets = rewards_t + not_dones_t * discount * q_samples # target_qf(torch.cat((next_obs_t, next_actions_t),1))
+    qf_loss = criterion(q_predictions, q_targets)
     return policy_loss, qf_loss
 
 
@@ -123,6 +121,7 @@ def simulate_policy_ac(
     # Copy parameters initially
     soft_update_target(qf, target_qf, 1.0)
 
+    rewards_all = []
     for iter_num in range(num_epochs):
         sample_trajs = []
 
@@ -131,8 +130,10 @@ def simulate_policy_ac(
             sample_traj = collect_trajs(env, policy, replay_buffer, device, episode_length=episode_length, render=render)
             sample_trajs.append(sample_traj)
 
+        # Logging returns
+        rewards_np = rewards_np = np.mean(np.asarray([traj['rewards'].sum() for traj in sample_trajs]))
+        rewards_all.append(rewards_np)
         if iter_num % print_freq == 0:
-            rewards_np = np.mean(np.asarray([traj['rewards'].sum() for traj in sample_trajs]))
             path_length = np.max(np.asarray([traj['rewards'].shape[0] for traj in sample_trajs]))
             print("Episode: {}, reward: {}, max path length: {}".format(iter_num, rewards_np, path_length))
 
@@ -150,5 +151,6 @@ def simulate_policy_ac(
             qf_loss.backward()
             qf_optimizer.step()
 
-
             soft_update_target(qf, target_qf, target_weight)
+
+    return rewards_all

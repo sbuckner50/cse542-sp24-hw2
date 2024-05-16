@@ -9,6 +9,7 @@ from actor_critic import simulate_policy_ac, ReplayBuffer
 from utils import ACPolicy, QF, TargetQF, PGPolicy, PGBaseline
 from evaluate import evaluate
 import random
+from pdb import set_trace as debug
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('using device', device)
@@ -30,6 +31,9 @@ if __name__ == '__main__':
 
     env = gym.make("InvertedPendulum-v2")
 
+    specifier = '_alt'
+    # specifier = ''
+    rewards_all = []
     if args.task == 'policy_gradient':
         # Define policy and value function
         hidden_dim_pol = 64
@@ -52,12 +56,17 @@ if __name__ == '__main__':
 
         if not args.test:
             # Train policy gradient
-            simulate_policy_pg(env, policy, baseline, num_epochs=num_epochs, max_path_length=max_path_length, batch_size=batch_size,
+            rewards_all = simulate_policy_pg(env, policy, baseline, num_epochs=num_epochs, max_path_length=max_path_length, batch_size=batch_size,
                             gamma=gamma, baseline_train_batch_size=baseline_train_batch_size, device = device, baseline_num_epochs=baseline_num_epochs, print_freq=print_freq, render=args.render)
-            torch.save(policy.state_dict(), 'pg_final.pth')
+            torch.save(policy.state_dict(), 'data/pg_policy'+specifier+'.pth')
+            with open('data/pg_rewards'+specifier+'.npy', 'wb') as f:
+                np.save(f, rewards_all)
         else:
             print('loading pretrained pg')
-            policy.load_state_dict(torch.load(f'pg_final.pth'))
+            policy.load_state_dict(torch.load(f'data/pg_policy'+specifier+'.pth'))
+            with open('data/pg_rewards'+specifier+'.npy', 'rb') as f:
+                rewards_all = np.load(f)
+                
         evaluate(env, policy,  num_validation_runs=100, episode_length=max_path_length, render=args.render)
 
     if args.task == 'actor_critic':
@@ -88,14 +97,18 @@ if __name__ == '__main__':
             qf = QF(env.observation_space.shape[-1] + env.action_space.shape[-1], hidden_dim=hidden_dim, hidden_depth=hidden_depth).to(device)
             target_qf = TargetQF(env.observation_space.shape[-1] + env.action_space.shape[-1], hidden_dim=hidden_dim,
                                    hidden_depth=hidden_depth).to(device)
-            simulate_policy_ac(env, policy, qf, target_qf, replay_buffer, device,
+            rewards_all = simulate_policy_ac(env, policy, qf, target_qf, replay_buffer, device,
                                episode_length=episode_length,
                                num_epochs=num_epochs, batch_size=batch_size, num_update_steps=num_update_steps,
                                print_freq=print_freq,
                                render=args.render)
-            torch.save(policy.state_dict(), 'ac_final.pth')
+            torch.save(policy.state_dict(), 'data/ac_policy'+specifier+'.pth')
+            with open('data/ac_rewards'+specifier+'.npy', 'wb') as f:
+                np.save(f, rewards_all)
         else:
             print('loading pretrained ac')
-            policy.load_state_dict(torch.load(f'ac_final.pth'))
+            policy.load_state_dict(torch.load(f'data/ac_policy'+specifier+'.pth'))
+            with open('data/ac_rewards'+specifier+'.npy', 'rb') as f:
+                rewards_all = np.load(f)
 
         evaluate(env, policy,  num_validation_runs=100, episode_length=episode_length, render=args.render)

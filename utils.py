@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from torch import distributions as pyd
 import torch.optim as optim
 from torch.distributions import Categorical
+from pdb import set_trace as debug
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -80,11 +81,9 @@ class ACPolicy(nn.Module):
         return loc, std, log_std
 
     def dist_sample_no_postprocess(self, mu, std):
-        action = torch.zeros((mu.shape[0], 1)).to(device)
-        # TODO START
-        # Hint: perform the reparameterization trick - action = mean + epsilon*std, where epsilon \sim N(0, I)
-        # This will allow policy updates through gradient based updates via pathwise derivatives
-        # TODO END
+        # Uses the reparameterization trick - action = mean + epsilon*std, where epsilon \sim N(0, I)
+        epsilon = torch.normal(torch.zeros(1),torch.ones(1)).to(device)
+        action = mu + epsilon*std
         return action
 
 
