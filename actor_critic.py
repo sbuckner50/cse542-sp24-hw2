@@ -87,7 +87,9 @@ def compute_losses(policy, qf, target_qf, obs_t, actions_t, rewards_t, next_obs_
     q_predictions = qf(torch.cat((obs_t, actions_t),1))
     with torch.no_grad():
         next_actions_t,_,_ = policy.forward(next_obs_t) 
-        q_targets = rewards_t + not_dones_t * discount * q_samples # target_qf(torch.cat((next_obs_t, next_actions_t),1))
+        # target_q_network = target_qf(torch.cat((next_obs_t, next_actions_t),1))
+        target_q_network = qf(torch.cat((next_obs_t, next_actions_t),1))
+        q_targets = rewards_t + not_dones_t * discount * target_q_network
     qf_loss = criterion(q_predictions, q_targets)
     return policy_loss, qf_loss
 
